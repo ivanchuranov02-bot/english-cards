@@ -288,7 +288,7 @@ function renderTopic() {
     <div class="bar"><i class="g" style="width:${me.pct * 100}%"></i><i class="o" style="width:${me.l / me.total * 100}%"></i></div>
     <div class="sub" style="margin:8px 0 18px">Выучено ${me.k} · ещё учу ${me.l} · новых ${me.total - me.k - me.l}</div>
     <div class="stack">
-      <button class="pill-btn" data-start="topic-left">${left ? `Учить карточки · ${left}` : "Тема выучена! Повторить"}</button>
+      <button class="pill-btn" data-start="topic-left">${left ? `Учить карточки · ${left}` : (S.user === "sasha" ? "Пупсик, ты молодец! Нажми сюда, если хочешь повторить" : "Тема выучена! Повторить")}</button>
       ${left && left !== t.words.length ? `<button class="pill-btn secondary" data-start="topic-all">Все карточки темы · ${t.words.length}</button>` : ""}
     </div>
     <h2 class="h2">Слова темы</h2>
