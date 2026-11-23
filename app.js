@@ -94,6 +94,9 @@ if (!USERS.some(u => u.id === S.user)) S.user = null;
 const prog = (user, id) => data.progress?.[user]?.[id];
 const starred = (user, id) => !!data.stars?.[user]?.[id];
 const userById = id => USERS.find(u => u.id === id);
+const face = (u, cls = "") => u.photo
+  ? `<img class="face-img ${cls}" src="${u.photo}?v=1" alt="${esc(u.name)}" draggable="false">`
+  : `<span class="${cls}">${u.emoji}</span>`;
 const other = () => USERS.find(u => u.id !== S.user);
 function stats(user, words) {
   let k = 0, l = 0;
@@ -178,7 +181,7 @@ function renderWho() {
       <h1 class="h1">Sport English</h1>
       <div class="sub">Кто учит слова?</div>
       <div class="who-list">
-        ${USERS.map(u => `<button class="who-card" data-who="${u.id}"><div class="avatar">${u.emoji}</div>${esc(u.name)}</button>`).join("")}
+        ${USERS.map(u => `<button class="who-card" data-who="${u.id}"><div class="avatar">${face(u)}</div>${esc(u.name)}</button>`).join("")}
       </div>
     </div>`;
 }
@@ -191,7 +194,7 @@ function header(title) {
   const u = userById(S.user);
   return `<div class="topbar">
       <div><h1 class="h1">${title}</h1>${syncNoteHtml()}</div>
-      <button class="avatar" data-act="switch" title="Сменить пользователя">${u.emoji}</button>
+      <button class="avatar" data-act="switch" title="Сменить пользователя">${face(u)}</button>
     </div>`;
 }
 
@@ -204,7 +207,7 @@ function topicCard(t) {
       <div class="topic-ru">${esc(t.ru)} · ${cards(t.words.length)}</div>
       <div class="bar"><i class="g" style="width:${me.k / me.total * 100}%"></i><i class="o" style="width:${me.l / me.total * 100}%"></i></div>
       <div class="topic-meta"><span>Выучено ${me.k}/${me.total}</span>
-        <span class="mini-users"><span>${o.emoji} ${os.k}/${os.total}</span></span></div>
+        <span class="mini-users"><span>${face(o, "mini")} ${os.k}/${os.total}</span></span></div>
     </div>
   </button>`;
 }
@@ -244,10 +247,10 @@ function renderHome() {
   } else {
     const [a, b] = USERS.map(u => ({ u, s: stats(u.id, ALL_WORDS) }));
     const lead = a.s.k === b.s.k ? "Пока ничья 🤝"
-      : (() => { const w = a.s.k > b.s.k ? a : b, l = w === a ? b : a; return `${w.u.emoji} ${esc(w.u.name)} впереди на ${words(w.s.k - l.s.k)}`; })();
+      : (() => { const w = a.s.k > b.s.k ? a : b, l = w === a ? b : a; return `${face(w.u, "mini")} ${esc(w.u.name)} впереди на ${words(w.s.k - l.s.k)}`; })();
     const duo = [a, b].map(({ u, s }) => `
       <div class="duo-card ${u.id === S.user ? "me" : ""}">
-        <div class="avatar" style="background:${u.color}22">${u.emoji}</div>
+        <div class="avatar" style="box-shadow:0 0 0 3px ${u.color}">${face(u)}</div>
         <div class="name">${esc(u.name)}</div>
         <div class="num" style="color:${u.color}">${s.k}</div>
         <div class="of">из ${s.total} выучено</div>
@@ -257,7 +260,7 @@ function renderHome() {
     const rows = TOPICS.map(t => `
       <div class="pt"><div class="pt-title">${TOPIC_ICON[t.id] || ""} ${esc(t.en)}</div>
       ${USERS.map(u => { const s = stats(u.id, t.words); return `
-        <div class="pt-row"><span>${u.emoji}</span>
+        <div class="pt-row">${face(u, "mini")}
           <div class="bar"><i style="width:${s.pct * 100}%;background:${u.color}"></i></div>
           <span class="num">${s.k}/${s.total}</span></div>`; }).join("")}
       </div>`).join("");
@@ -485,7 +488,7 @@ function openSettings() {
   });
 }
 function openSwitch() {
-  sheet(`<h3>Кто учит?</h3>${USERS.map(u => `<button class="opt" data-opt="${u.id}"><span>${u.emoji} ${esc(u.name)}</span>${u.id === S.user ? "✓" : ""}</button>`).join("")}`,
+  sheet(`<h3>Кто учит?</h3>${USERS.map(u => `<button class="opt" data-opt="${u.id}"><span class="opt-who">${face(u, "mini")} ${esc(u.name)}</span>${u.id === S.user ? "✓" : ""}</button>`).join("")}`,
     (id, bg) => { S.user = id; LS.set("ec_user", id); bg.remove(); lastSeen = 0; touchSeen(); render(); });
 }
 
