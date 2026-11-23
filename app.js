@@ -12,6 +12,8 @@ const TOPICS = window.TOPICS;
 const GROUPS = window.TOPIC_GROUPS || {};
 const ALL_WORDS = TOPICS.flatMap(t => t.words);
 const WORD_BY_ID = Object.fromEntries(ALL_WORDS.map(w => [w.id, w]));
+const HUES = [340, 20, 275, 195, 45, 310, 150, 255, 5, 225, 330, 170, 35, 290];
+const hue = t => HUES[TOPICS.indexOf(t) % HUES.length];
 const TOPIC_ICON = {
   general: "🏃", qualities: "💪", kinds: "🏅", people: "🧑‍🤝‍🧑", career: "📈", competitions: "🏆",
   team: "👥", scoring: "🔢", records: "⏱️", refereeing: "🧑‍⚖️", fans: "📣",
@@ -177,7 +179,7 @@ function updateSyncNote() {
 function renderWho() {
   $app.innerHTML = `
     <div class="who">
-      <div style="font-size:56px">🏅</div>
+      <div class="who-logo">🏅</div>
       <h1 class="h1">Sport English</h1>
       <div class="sub">Кто учит слова?</div>
       <div class="who-list">
@@ -201,12 +203,12 @@ function header(title) {
 function topicCard(t) {
   const me = stats(S.user, t.words), o = other(), os = stats(o.id, t.words);
   return `<button class="topic" data-topic="${t.id}">
-    <div class="topic-ico">${TOPIC_ICON[t.id] || "📘"}</div>
+    <div class="topic-ico" style="--h:${hue(t)}">${TOPIC_ICON[t.id] || "📘"}</div>
     <div class="topic-body">
       <div class="topic-title">${esc(t.en)}</div>
       <div class="topic-ru">${esc(t.ru)} · ${cards(t.words.length)}</div>
       <div class="bar"><i class="g" style="width:${me.k / me.total * 100}%"></i><i class="o" style="width:${me.l / me.total * 100}%"></i></div>
-      <div class="topic-meta"><span>Выучено ${me.k}/${me.total}</span>
+      <div class="topic-meta">${me.k === me.total ? `<span class="done">✓ Выучено всё</span>` : `<span>Выучено ${me.k}/${me.total}</span>`}
         <span class="mini-users"><span>${face(o, "mini")} ${os.k}/${os.total}</span></span></div>
     </div>
   </button>`;
@@ -285,7 +287,7 @@ function renderTopic() {
   }).join("");
   $app.innerHTML = `<div class="screen" style="padding-bottom:40px">
     <div class="topbar"><button class="icon-btn" data-act="home">${I.back}</button><div style="flex:1"></div></div>
-    <div style="font-size:40px">${TOPIC_ICON[t.id] || "📘"}</div>
+    <div class="topic-ico topic-hero-ico" style="--h:${hue(t)}">${TOPIC_ICON[t.id] || "📘"}</div>
     <h1 class="h1">${esc(t.en)}</h1>
     <div class="sub" style="margin:4px 0 16px">${esc(t.ru)} · ${cards(t.words.length)}</div>
     <div class="bar"><i class="g" style="width:${me.pct * 100}%"></i><i class="o" style="width:${me.l / me.total * 100}%"></i></div>
@@ -334,6 +336,7 @@ function faceHtml(w, side) {
       <button data-say="${w.id}" aria-label="Озвучить">${I.sound}</button>
       <button data-star="${w.id}" class="${st ? "on" : ""}" aria-label="Избранное">${st ? I.starOn : I.star}</button>
     </div>
+    <div class="lang">${lang === "en" ? "ENGLISH" : "РУССКИЙ"}</div>
     <div class="txt ${size}">${esc(text)}</div>
     ${side === "front" ? `<div class="hint">нажми, чтобы перевернуть</div>` : ""}
   </div>`;
@@ -460,6 +463,39 @@ function renderResult() {
       <button class="pill-btn ${done ? "" : "secondary"}" data-act="close">Готово</button>
     </div>
   </div>`;
+  if (done) confetti();
+}
+
+function confetti() {
+  if (matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  document.getElementById("confetti")?.remove();
+  const c = document.createElement("canvas");
+  c.id = "confetti";
+  const dpr = window.devicePixelRatio || 1;
+  c.width = innerWidth * dpr; c.height = innerHeight * dpr;
+  document.body.appendChild(c);
+  const ctx = c.getContext("2d");
+  ctx.scale(dpr, dpr);
+  const colors = ["#ff7aa5", "#ff5c93", "#a77bff", "#ffb27a", "#4fd6a2", "#ffd166"];
+  const parts = Array.from({ length: 110 }, () => ({
+    x: Math.random() * innerWidth, y: -20 - Math.random() * innerHeight * .6,
+    vx: (Math.random() - .5) * 1.5, vy: 2 + Math.random() * 3, sway: Math.random() * 6,
+    s: 6 + Math.random() * 6, r: Math.random() * 6, vr: (Math.random() - .5) * .25,
+    c: colors[Math.floor(Math.random() * colors.length)], heart: Math.random() < .15,
+  }));
+  const t0 = performance.now();
+  (function frame(t) {
+    const life = (t - t0) / 3200;
+    ctx.clearRect(0, 0, innerWidth, innerHeight);
+    for (const p of parts) {
+      p.vy += .05; p.sway += .05; p.x += p.vx + Math.sin(p.sway) * .8; p.y += p.vy; p.r += p.vr;
+      ctx.save(); ctx.globalAlpha = Math.max(0, Math.min(1, (1 - life) * 3)); ctx.translate(p.x, p.y); ctx.rotate(p.r); ctx.fillStyle = p.c;
+      if (p.heart) { ctx.font = `${Math.round(p.s * 1.4)}px serif`; ctx.fillText("💖", -p.s * .7, p.s * .7); }
+      else ctx.fillRect(-p.s / 2, -p.s / 4, p.s, p.s / 2);
+      ctx.restore();
+    }
+    if (life < 1 && document.body.contains(c)) requestAnimationFrame(frame); else c.remove();
+  })(t0);
 }
 
 /* ================= шторки ================= */
